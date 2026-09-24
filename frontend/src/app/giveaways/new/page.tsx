@@ -9,7 +9,7 @@ import { useI18n } from "../../../lib/i18n";
 
 export default function NewGiveaway() {
   const router = useRouter();
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -22,6 +22,7 @@ export default function NewGiveaway() {
   const [description, setDescription] = useState("");
   const [startsAt, setStartsAt] = useState(formatDateForInput(defaultStart));
   const [endsAt, setEndsAt] = useState(formatDateForInput(defaultEnd));
+  const [selectedDurationDays, setSelectedDurationDays] = useState<number | "custom">(3);
   const [winnersCount, setWinnersCount] = useState(1);
   const [excludeHighRisk, setExcludeHighRisk] = useState(true);
 
@@ -54,11 +55,14 @@ export default function NewGiveaway() {
     setChannels(channels.filter((_, i) => i !== idx));
   };
 
-  const setPresetDuration = (days: number) => {
+  const handleSelectDuration = (days: number | "custom") => {
     hapticImpact("light");
-    const start = new Date(startsAt);
-    const end = new Date(start.getTime() + days * 24 * 60 * 60 * 1000);
-    setEndsAt(formatDateForInput(end));
+    setSelectedDurationDays(days);
+    if (days !== "custom") {
+      const start = new Date(startsAt);
+      const end = new Date(start.getTime() + days * 24 * 60 * 60 * 1000);
+      setEndsAt(formatDateForInput(end));
+    }
   };
 
   const handleSubmit = async (e: FormEvent) => {
@@ -157,105 +161,166 @@ export default function NewGiveaway() {
         <section className="card" style={{ marginBottom: "16px" }}>
           <h2>{t.createSec1Title}</h2>
 
-          <label>{t.createFieldTitle}</label>
-          <input
-            type="text"
-            required
-            placeholder={t.createFieldTitlePlaceholder}
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-          />
+          <div className="form-group">
+            <label>{t.createFieldTitle}</label>
+            <input
+              type="text"
+              required
+              placeholder={t.createFieldTitlePlaceholder}
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+            />
+          </div>
 
-          <label>{t.createFieldDesc}</label>
-          <textarea
-            placeholder={t.createFieldDescPlaceholder}
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-          />
+          <div className="form-group">
+            <label>{t.createFieldDesc}</label>
+            <textarea
+              placeholder={t.createFieldDescPlaceholder}
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+            />
+          </div>
 
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
-            <div>
+          {/* Quick Duration Selector Pills */}
+          <div className="form-group">
+            <label>{locale === "ru" ? "Длительность розыгрыша" : "Giveaway Duration"}</label>
+            <div className="segmented-grid segmented-grid-4">
+              <div
+                className={`segmented-item ${selectedDurationDays === 1 ? "active" : ""}`}
+                onClick={() => handleSelectDuration(1)}
+              >
+                <span className="segmented-icon">⚡</span>
+                <span>{locale === "ru" ? "24 часа" : "24 Hours"}</span>
+              </div>
+              <div
+                className={`segmented-item ${selectedDurationDays === 3 ? "active" : ""}`}
+                onClick={() => handleSelectDuration(3)}
+              >
+                <span className="segmented-icon">🗓️</span>
+                <span>{locale === "ru" ? "3 дня" : "3 Days"}</span>
+              </div>
+              <div
+                className={`segmented-item ${selectedDurationDays === 7 ? "active" : ""}`}
+                onClick={() => handleSelectDuration(7)}
+              >
+                <span className="segmented-icon">📅</span>
+                <span>{locale === "ru" ? "7 дней" : "7 Days"}</span>
+              </div>
+              <div
+                className={`segmented-item ${selectedDurationDays === "custom" ? "active" : ""}`}
+                onClick={() => handleSelectDuration("custom")}
+              >
+                <span className="segmented-icon">⚙️</span>
+                <span>{locale === "ru" ? "Вручную" : "Custom"}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Date inputs (responsive row that cleanly stacks on phone) */}
+          <div className="form-row form-row-2">
+            <div className="form-group">
               <label>{t.createFieldStartsAt}</label>
               <input
                 type="datetime-local"
                 required
                 value={startsAt}
-                onChange={(e) => setStartsAt(e.target.value)}
+                onChange={(e) => {
+                  setStartsAt(e.target.value);
+                  setSelectedDurationDays("custom");
+                }}
               />
             </div>
-            <div>
+            <div className="form-group">
               <label>{t.createFieldEndsAt}</label>
               <input
                 type="datetime-local"
                 required
                 value={endsAt}
-                onChange={(e) => setEndsAt(e.target.value)}
+                onChange={(e) => {
+                  setEndsAt(e.target.value);
+                  setSelectedDurationDays("custom");
+                }}
               />
             </div>
           </div>
 
-          <div style={{ display: "flex", gap: "6px", marginBottom: "14px", flexWrap: "wrap", alignItems: "center" }}>
-            <span className="muted" style={{ fontSize: "0.78rem" }}>
-              {t.createQuickPresets}
-            </span>
-            <button
-              type="button"
-              className="button-secondary button-sm"
-              onClick={() => setPresetDuration(1)}
-            >
-              +24h
-            </button>
-            <button
-              type="button"
-              className="button-secondary button-sm"
-              onClick={() => setPresetDuration(3)}
-            >
-              +3d
-            </button>
-            <button
-              type="button"
-              className="button-secondary button-sm"
-              onClick={() => setPresetDuration(7)}
-            >
-              +7d
-            </button>
+          <div className="form-group">
+            <label>{t.createFieldWinners}</label>
+            <input
+              type="number"
+              inputMode="numeric"
+              min={1}
+              max={100}
+              required
+              value={winnersCount}
+              onChange={(e) => setWinnersCount(Math.max(1, Math.min(100, Number(e.target.value))))}
+            />
           </div>
-
-          <label>{t.createFieldWinners}</label>
-          <input
-            type="number"
-            inputMode="numeric"
-            min={1}
-            max={100}
-            required
-            value={winnersCount}
-            onChange={(e) => setWinnersCount(Math.max(1, Math.min(100, Number(e.target.value))))}
-          />
         </section>
 
         {/* Section 2: Prize details */}
         <section className="card" style={{ marginBottom: "16px" }}>
           <h2>{t.createSec2Title}</h2>
 
-          <label>{t.createFieldPrizeType}</label>
-          <select value={prizeType} onChange={(e) => setPrizeType(e.target.value as PrizeType)}>
-            <option value="telegram_gift">{t.createTypeTgGift}</option>
-            <option value="telegram_collectible">{t.createTypeCollectible}</option>
-            <option value="ton_nft">{t.createTypeTonNft}</option>
-            <option value="custom">{t.createTypeCustom}</option>
-          </select>
+          <div className="form-group">
+            <label>{t.createFieldPrizeType}</label>
+            <div className="segmented-grid segmented-grid-4">
+              <div
+                className={`segmented-item ${prizeType === "telegram_gift" ? "active" : ""}`}
+                onClick={() => {
+                  hapticImpact("light");
+                  setPrizeType("telegram_gift");
+                }}
+              >
+                <span className="segmented-icon">🎁</span>
+                <span>TG Gift</span>
+              </div>
+              <div
+                className={`segmented-item ${prizeType === "telegram_collectible" ? "active" : ""}`}
+                onClick={() => {
+                  hapticImpact("light");
+                  setPrizeType("telegram_collectible");
+                }}
+              >
+                <span className="segmented-icon">🌟</span>
+                <span>Collectible</span>
+              </div>
+              <div
+                className={`segmented-item ${prizeType === "ton_nft" ? "active" : ""}`}
+                onClick={() => {
+                  hapticImpact("light");
+                  setPrizeType("ton_nft");
+                }}
+              >
+                <span className="segmented-icon">🖼️</span>
+                <span>TON NFT</span>
+              </div>
+              <div
+                className={`segmented-item ${prizeType === "custom" ? "active" : ""}`}
+                onClick={() => {
+                  hapticImpact("light");
+                  setPrizeType("custom");
+                }}
+              >
+                <span className="segmented-icon">🎯</span>
+                <span>{locale === "ru" ? "Свой приз" : "Custom"}</span>
+              </div>
+            </div>
+          </div>
 
-          <label>{t.createFieldPrizeTitle}</label>
-          <input
-            type="text"
-            required
-            placeholder={t.createFieldPrizeTitlePlaceholder}
-            value={prizeTitle}
-            onChange={(e) => setPrizeTitle(e.target.value)}
-          />
+          <div className="form-group">
+            <label>{t.createFieldPrizeTitle}</label>
+            <input
+              type="text"
+              required
+              placeholder={t.createFieldPrizeTitlePlaceholder}
+              value={prizeTitle}
+              onChange={(e) => setPrizeTitle(e.target.value)}
+            />
+          </div>
 
-          <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: "10px" }}>
-            <div>
+          <div className="form-row form-row-prize">
+            <div className="form-group">
               <label>{t.createFieldPrizeValue}</label>
               <input
                 type="number"
@@ -266,7 +331,7 @@ export default function NewGiveaway() {
                 onChange={(e) => setPrizeValue(e.target.value)}
               />
             </div>
-            <div>
+            <div className="form-group">
               <label>{t.createFieldPrizeCurrency}</label>
               <input
                 type="text"
@@ -277,13 +342,15 @@ export default function NewGiveaway() {
             </div>
           </div>
 
-          <label>{t.createFieldPrizeNotes}</label>
-          <input
-            type="text"
-            placeholder={t.createFieldPrizeNotesPlaceholder}
-            value={prizeDesc}
-            onChange={(e) => setPrizeDesc(e.target.value)}
-          />
+          <div className="form-group">
+            <label>{t.createFieldPrizeNotes}</label>
+            <input
+              type="text"
+              placeholder={t.createFieldPrizeNotesPlaceholder}
+              value={prizeDesc}
+              onChange={(e) => setPrizeDesc(e.target.value)}
+            />
+          </div>
         </section>
 
         {/* Section 3: Requirements / Channels */}
@@ -293,7 +360,7 @@ export default function NewGiveaway() {
             {t.createSec3Desc}
           </p>
 
-          <div style={{ display: "flex", gap: "8px", marginBottom: "12px" }}>
+          <div style={{ display: "flex", gap: "8px", marginBottom: "12px", alignItems: "stretch" }}>
             <input
               type="text"
               placeholder={t.createFieldChannelPlaceholder}
@@ -305,13 +372,13 @@ export default function NewGiveaway() {
                   addChannel();
                 }
               }}
-              style={{ marginBottom: 0 }}
+              style={{ marginBottom: 0, flex: 1 }}
             />
             <button
               type="button"
               className="button-secondary"
               onClick={addChannel}
-              style={{ whiteSpace: "nowrap" }}
+              style={{ whiteSpace: "nowrap", minHeight: "46px" }}
             >
               {t.createBtnAddChannel}
             </button>
@@ -330,7 +397,7 @@ export default function NewGiveaway() {
                     display: "flex",
                     justifyContent: "space-between",
                     alignItems: "center",
-                    padding: "8px 12px",
+                    padding: "10px 12px",
                     background: "rgba(0,0,0,0.25)",
                     borderRadius: "8px",
                   }}
@@ -339,7 +406,7 @@ export default function NewGiveaway() {
                   <button
                     type="button"
                     className="button-secondary button-sm"
-                    style={{ color: "#f87171", padding: "4px 8px", minHeight: "30px" }}
+                    style={{ color: "#f87171", padding: "4px 10px", minHeight: "32px" }}
                     onClick={() => removeChannel(idx)}
                   >
                     {t.createBtnRemove}
@@ -350,36 +417,24 @@ export default function NewGiveaway() {
           )}
         </section>
 
-        {/* Section 4: Anti-Fraud Rules */}
+        {/* Section 4: Anti-Fraud Rules (Modern Telegram Toggle Switch) */}
         <section className="card" style={{ marginBottom: "20px" }}>
           <h2>{t.createSec4Title}</h2>
 
           <div
-            style={{
-              display: "flex",
-              alignItems: "flex-start",
-              gap: "10px",
-              padding: "12px",
-              background: "rgba(56, 189, 248, 0.05)",
-              borderRadius: "8px",
-              border: "1px solid rgba(56, 189, 248, 0.2)",
+            className="switch-container"
+            onClick={() => {
+              hapticImpact("light");
+              setExcludeHighRisk(!excludeHighRisk);
             }}
           >
-            <input
-              type="checkbox"
-              id="excludeHighRisk"
-              checked={excludeHighRisk}
-              onChange={(e) => setExcludeHighRisk(e.target.checked)}
-              style={{ width: "22px", height: "22px", marginTop: "2px", accentColor: "#38bdf8" }}
-            />
-            <label htmlFor="excludeHighRisk" style={{ margin: 0, cursor: "pointer", color: "#f1f5f9" }}>
-              <div style={{ fontWeight: 700, marginBottom: "2px", fontSize: "0.9rem" }}>
-                {t.createExcludeHighRiskLabel}
-              </div>
-              <p className="muted" style={{ fontSize: "0.8rem", margin: 0 }}>
-                {t.createExcludeHighRiskDesc}
-              </p>
-            </label>
+            <div className="switch-label-group">
+              <span className="switch-title">{t.createExcludeHighRiskLabel}</span>
+              <span className="switch-desc">{t.createExcludeHighRiskDesc}</span>
+            </div>
+            <div className={`switch-track ${excludeHighRisk ? "active" : ""}`}>
+              <div className="switch-thumb" />
+            </div>
           </div>
         </section>
 

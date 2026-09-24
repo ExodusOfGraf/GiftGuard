@@ -96,39 +96,38 @@ export default function ParticipantsPage() {
 
       {/* Filter and Search Bar */}
       <section className="card" style={{ marginBottom: "16px", padding: "14px" }}>
-        <div style={{ display: "flex", gap: "10px", flexWrap: "wrap", alignItems: "center" }}>
-          <div style={{ flex: 1, minWidth: "200px" }}>
-            <input
-              type="text"
-              placeholder={t.partSearchPlaceholder}
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              style={{ marginBottom: 0 }}
-            />
-          </div>
+        <div className="form-group">
+          <input
+            type="text"
+            placeholder={t.partSearchPlaceholder}
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        </div>
 
-          <div style={{ display: "flex", gap: "8px", width: "100%", flexWrap: "wrap" }}>
+        <div className="form-row form-row-2" style={{ marginBottom: 0 }}>
+          <div className="form-group" style={{ marginBottom: 0 }}>
             <select
               value={eligibilityFilter}
               onChange={(e) => {
                 hapticImpact("light");
                 setEligibilityFilter(e.target.value);
               }}
-              style={{ flex: 1, minWidth: "140px", marginBottom: 0 }}
             >
               <option value="all">{t.partFilterAllEligibility}</option>
               <option value="eligible">{t.partFilterEligible}</option>
               <option value="pending">{t.partFilterPending}</option>
               <option value="rejected">{t.partFilterRejected}</option>
             </select>
+          </div>
 
+          <div className="form-group" style={{ marginBottom: 0 }}>
             <select
               value={riskFilter}
               onChange={(e) => {
                 hapticImpact("light");
                 setRiskFilter(e.target.value);
               }}
-              style={{ flex: 1, minWidth: "130px", marginBottom: 0 }}
             >
               <option value="all">{t.partFilterAllRisk}</option>
               <option value="low">{t.partFilterRiskLow}</option>
