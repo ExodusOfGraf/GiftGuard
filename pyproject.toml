@@ -1,0 +1,17 @@
+[project]
+name = "giftguard"
+version = "0.1.0"
+description = "Transparent and reproducible Telegram giveaway service"
+requires-python = ">=3.12"
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E4", "E7", "E9", "F"]
+ignore = ["E501"]
+
+[tool.pytest.ini_options]
+pythonpath = ["backend"]
+asyncio_mode = "auto"

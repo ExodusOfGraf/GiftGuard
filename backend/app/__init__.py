@@ -1,0 +1,1 @@
+"""GiftGuard application package."""
