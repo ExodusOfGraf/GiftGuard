@@ -3,7 +3,6 @@ from __future__ import annotations
 import uuid
 from typing import Annotated
 
-from aiogram import Bot
 from fastapi import (
     APIRouter,
     Depends,
@@ -31,6 +30,7 @@ from app.exceptions import (
     NotFoundError,
 )
 from app.integrations.telegram import TelegramMembershipChecker
+from app.integrations.telegram_bot import create_bot
 from app.models import Draw, Giveaway, Participation, User
 from app.repositories import ParticipationRepository, UserRepository
 from app.schemas import (
@@ -374,7 +374,11 @@ def create_app() -> FastAPI:
     @app.on_event("startup")
     async def open_redis() -> None:
         app.state.redis = from_url(settings.redis_url, decode_responses=True)
-        app.state.bot = Bot(settings.bot_token) if settings.bot_token else None
+        app.state.bot = (
+            create_bot(settings.bot_token, proxy_url=settings.telegram_proxy_url)
+            if settings.bot_token
+            else None
+        )
 
     @app.on_event("shutdown")
     async def close_redis() -> None:

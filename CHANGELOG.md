@@ -1,5 +1,22 @@
 # Журнал изменений проекта GiftGuard (CHANGELOG)
 
+## [0.4.2-telegram-proxy-prep] — 2026-09-24
+
+### Диагностика и изменения
+
+- На staging обнаружено, что api.telegram.org недоступен с VPS по IPv4 (таймаут), но доступен по IPv6. В контейнере bot запрос getMe завершался таймаутом; после шести рестартов бот остановлен до настройки прокси. Backend, frontend, PostgreSQL, Redis и worker остаются запущены.
+- Xray/V2Ray/sing-box на сервере не обнаружены. Добавлен необязательный Xray sidecar в staging Compose без публичных портов; он пока не включён и не содержит секретной конфигурации.
+- Добавлена настройка TELEGRAM_PROXY_URL для bot, API-проверок подписки и worker через aiogram AiohttpSession. Добавлена зависимость aiohttp-socks.
+- Deploy staging после запуска контейнеров теперь проверяет реальный Telegram getMe; недоступный Telegram API больше не считается успешным релизом.
+
+### Проверено и осталось
+
+- Локально: Ruff check/format, 24 backend-теста и синтаксис YAML прошли; staging Compose прошёл docker compose config на сервере.
+- Ожидается Xray share URI, после чего нужно создать серверный config.json с правами 600, включить профиль xray и проверить Telegram end-to-end. Публичные Nginx/HTTPS пока также не настроены.
+
+---
+
+
 ## [0.4.1-staging-deploy] — 2026-09-24
 
 ### Проверено

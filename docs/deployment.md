@@ -21,6 +21,12 @@ After the stack passes a local health check, add an Nginx vhost for `giftguard.g
 
 Run **Deploy staging** from the Actions tab. The backend applies Alembic migrations at startup. On the server, inspect `cd /opt/giftguard && docker compose -f compose.yml ps` and `curl -I http://127.0.0.1:3000`. The public API health path is `https://giftguard.grafskov.ru/api/health` after Nginx is configured.
 
+## Telegram API connectivity on this VPS
+
+The host reaches api.telegram.org over IPv6, but its IPv4 connection times out. The bot has restarted on Telegram getMe timeouts; it is stopped until a proxy is configured. The staging Compose file includes an optional Xray sidecar under the xray profile. It publishes no ports and runs as the giftguard UID (1001) so it can read a server-only config with mode 600.
+
+After the Xray share URI is converted to /opt/giftguard/xray/config.json, set COMPOSE_PROFILES=xray and TELEGRAM_PROXY_URL=socks5://xray:1080 in the server .env. Never commit the share URI or generated config. Test the Xray configuration and a real Telegram getMe request before enabling the bot. The deploy workflow now performs that getMe smoke check and fails if Telegram remains unreachable.
+
 ## Release limits
 
 The server has 1 vCPU and about 1 GB RAM and already runs another website. Monitor memory and disk during the first deployment; increase RAM before live traffic. This is a staging workflow. Production mode rejects the current `timestamp-dev` draw entropy by design. Implement and verify an independently sourced, precommitted entropy round before accepting real prizes or advertising production fairness.

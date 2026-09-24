@@ -41,6 +41,8 @@ Tests cover deterministic draw, rejection sampling properties, tamper detection,
 
 Create a bot with BotFather and set `BOT_TOKEN`. The bot needs administrator access in each required channel or supergroup because Telegram only guarantees `getChatMember` checks for other users when the bot is an administrator. Configure a menu or main Mini App URL to `FRONTEND_URL`.
 
+If the host cannot reach the Telegram Bot API directly, set TELEGRAM_PROXY_URL to a reachable SOCKS5 or HTTP proxy. The bot, API membership checks, and worker then use that proxy; keep proxy credentials only in the server .env.
+
 The bot supports `/start`, `/help`, `/create`, `/my_giveaways`, `/giveaway <id>`, `/draw <id>` and inline participation. Its wizard collects prize and channel requirements and publishes the giveaway. The dashboard also supports creating drafts and publishing them.
 
 ## Mini App setup

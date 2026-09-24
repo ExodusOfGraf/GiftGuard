@@ -23,6 +23,15 @@ services:
       timeout: 5s
       retries: 10
 
+  xray:
+    profiles: [xray]
+    image: ghcr.io/xtls/xray-core:26.7.28@sha256:d7911c19a283acdc57e171ae0e3bd49ab4c29db14e2ab9274aa97132dd3ca3b9
+    restart: unless-stopped
+    user: "1001:1001"
+    volumes:
+      - ./xray/config.json:/usr/local/etc/xray/config.json:ro
+    command: ["run", "-config", "/usr/local/etc/xray/config.json"]
+
   backend:
     image: giftguard-backend:${GIFTGUARD_TAG:?}
     restart: unless-stopped

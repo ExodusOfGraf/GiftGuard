@@ -1,4 +1,5 @@
 aiogram>=3.13,<4
+aiohttp-socks>=0.12,<1
 alembic>=1.13,<2
 arq>=0.26,<1
 asyncpg>=0.29,<1

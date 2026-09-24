@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 
-from aiogram import Bot
 from arq import cron
 from arq.connections import RedisSettings
 from sqlalchemy import select
@@ -11,6 +10,7 @@ from sqlalchemy.orm import selectinload
 from app.config import get_settings
 from app.db import SessionLocal
 from app.integrations.telegram import TelegramMembershipChecker
+from app.integrations.telegram_bot import create_bot
 from app.models import EligibilityStatus, Giveaway, GiveawayStatus, Participation
 from app.repositories import GiveawayRepository
 from app.services.draw import DrawService
@@ -43,7 +43,7 @@ async def recheck_participations(ctx) -> None:
     settings = get_settings()
     if not settings.bot_token:
         return
-    bot = Bot(settings.bot_token)
+    bot = create_bot(settings.bot_token, proxy_url=settings.telegram_proxy_url)
     try:
         async with SessionLocal() as session:
             ids = list(

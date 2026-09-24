@@ -10,6 +10,7 @@ class Settings(BaseSettings):
     app_env: str = "development"
     app_secret: str = Field(min_length=16)
     bot_token: str = ""
+    telegram_proxy_url: str | None = None
     database_url: str = "postgresql+asyncpg://giftguard:giftguard@postgres:5432/giftguard"
     redis_url: str = "redis://redis:6379/0"
     frontend_url: str = "http://localhost:3000"

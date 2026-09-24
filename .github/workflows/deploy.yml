@@ -54,3 +54,5 @@ jobs:
         run: |
           scp -o StrictHostKeyChecking=yes deploy/compose.yml giftguard@37.46.135.26:/opt/giftguard/compose.yml
           ssh -o StrictHostKeyChecking=yes giftguard@37.46.135.26             "cd /opt/giftguard && test -s .env && GIFTGUARD_TAG=${GITHUB_SHA} docker compose -f compose.yml up -d --wait"
+      - name: Verify Telegram Bot API
+        run: ssh -o StrictHostKeyChecking=yes giftguard@37.46.135.26 "cd /opt/giftguard && GIFTGUARD_TAG=$GITHUB_SHA docker compose -f compose.yml exec -T bot python -m app.integrations.telegram_smoke"

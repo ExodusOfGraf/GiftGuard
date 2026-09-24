@@ -25,6 +25,7 @@ from app.config import get_settings
 from app.db import SessionLocal
 from app.exceptions import DomainError
 from app.integrations.telegram import TelegramMembershipChecker
+from app.integrations.telegram_bot import create_bot
 from app.models import Giveaway, GiveawayStatus, User
 from app.repositories import GiveawayRepository, UserRepository
 from app.schemas import GiveawayCreate, PrizeCreate, RequirementCreate
@@ -950,7 +951,11 @@ async def run_bot() -> None:
     settings = get_settings()
     if not settings.bot_token:
         raise RuntimeError("BOT_TOKEN is required to run the bot")
-    bot = Bot(settings.bot_token, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
+    bot = create_bot(
+        settings.bot_token,
+        proxy_url=settings.telegram_proxy_url,
+        default=DefaultBotProperties(parse_mode=ParseMode.HTML),
+    )
     try:
         await build_dispatcher(bot).start_polling(bot)
     finally:
