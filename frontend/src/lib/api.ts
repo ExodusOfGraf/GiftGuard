@@ -110,7 +110,7 @@ export interface Verification {
   verified: boolean;
 }
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "";
 
 export function getInitData(): string {
   if (typeof window === "undefined") return "";

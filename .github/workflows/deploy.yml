@@ -1,0 +1,56 @@
+name: Deploy staging
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    uses: ./.github/workflows/ci.yml
+
+  deploy:
+    needs: verify
+    runs-on: ubuntu-latest
+    environment: staging
+    concurrency:
+      group: giftguard-staging
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure pinned SSH access
+        env:
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_SSH_PASSPHRASE: ${{ secrets.DEPLOY_SSH_PASSPHRASE }}
+        run: |
+          test -n "$DEPLOY_SSH_KEY"
+          test -n "$DEPLOY_SSH_PASSPHRASE"
+          install -m 700 -d "$HOME/.ssh"
+          printf '%s\n' "$DEPLOY_SSH_KEY" > "$HOME/.ssh/id_ed25519"
+          chmod 600 "$HOME/.ssh/id_ed25519"
+          install -m 644 deploy/known_hosts "$HOME/.ssh/known_hosts"
+          cat > "$RUNNER_TEMP/askpass" <<'EOF'
+          #!/bin/sh
+          printf '%s' "$DEPLOY_SSH_PASSPHRASE"
+          EOF
+          chmod 700 "$RUNNER_TEMP/askpass"
+          ssh-agent -a "$RUNNER_TEMP/ssh-agent.sock" >/dev/null
+          DISPLAY=:0 SSH_ASKPASS="$RUNNER_TEMP/askpass" SSH_ASKPASS_REQUIRE=force SSH_AUTH_SOCK="$RUNNER_TEMP/ssh-agent.sock" ssh-add "$HOME/.ssh/id_ed25519" </dev/null
+          echo "SSH_AUTH_SOCK=$RUNNER_TEMP/ssh-agent.sock" >> "$GITHUB_ENV"
+          rm "$HOME/.ssh/id_ed25519" "$RUNNER_TEMP/askpass"
+      - name: Check server configuration
+        run: ssh -o StrictHostKeyChecking=yes giftguard@37.46.135.26 "test -s /opt/giftguard/.env && grep -Eq '^BOT_TOKEN=.+$' /opt/giftguard/.env"
+      - name: Build release images on the runner
+        run: |
+          docker build -t giftguard-backend:${GITHUB_SHA} .
+          docker build -t giftguard-frontend:${GITHUB_SHA} ./frontend
+      - name: Send built images to the server
+        run: |
+          docker save giftguard-backend:${GITHUB_SHA} giftguard-frontend:${GITHUB_SHA} |
+            gzip -1 |
+            ssh -o StrictHostKeyChecking=yes giftguard@37.46.135.26 'gzip -dc | docker load'
+      - name: Apply staging release
+        run: |
+          scp -o StrictHostKeyChecking=yes deploy/compose.yml giftguard@37.46.135.26:/opt/giftguard/compose.yml
+          ssh -o StrictHostKeyChecking=yes giftguard@37.46.135.26             "cd /opt/giftguard && test -s .env && GIFTGUARD_TAG=${GITHUB_SHA} docker compose -f compose.yml up -d --wait"

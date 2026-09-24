@@ -13,21 +13,21 @@ services:
       timeout: 5s
       retries: 10
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"
 
   redis:
     image: redis:7-alpine
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
     ports:
-      - "6379:6379"
+      - "127.0.0.1:6379:6379"
 
   backend:
     build: .
     env_file: .env
     command: sh -c "alembic upgrade head && python run_api.py"
     ports:
-      - "8000:8000"
+      - "127.0.0.1:8000:8000"
     depends_on:
       postgres:
         condition: service_healthy
@@ -58,10 +58,8 @@ services:
 
   frontend:
     build: ./frontend
-    environment:
-      NEXT_PUBLIC_API_URL: ${BACKEND_URL:-http://localhost:8000}
     ports:
-      - "3000:3000"
+      - "127.0.0.1:3000:3000"
     depends_on:
       - backend
 

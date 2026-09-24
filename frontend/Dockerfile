@@ -1,4 +1,6 @@
 FROM node:20-alpine AS build
+ARG INTERNAL_API_URL=http://backend:8000
+ENV INTERNAL_API_URL=${INTERNAL_API_URL}
 WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci

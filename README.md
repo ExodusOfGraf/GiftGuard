@@ -51,8 +51,12 @@ GiftGuard v1 commits to a 32-byte cryptographically secure seed at publication. 
 
 Timestamp entropy is a predictable local development provider. It gives reproducibility but does not provide operator-independent randomness. Production startup is intentionally blocked while this is the only provider. A future external beacon provider and a committed round must be implemented before deployment. Gift ownership verification also remains unverified until a chain/Telegram integration is implemented.
 
+
+## CI and staging deployment
+
+GitHub Actions runs backend tests and an online PostgreSQL migration, frontend typecheck/build and Docker builds on each push. The manual staging workflow can transfer prebuilt images to the Ubuntu server over a pinned SSH connection; see [docs/deployment.md](docs/deployment.md). It requires the server environment file and GitHub deployment secrets before it can run.
 ## Security and limitations
 
 Secrets are environment variables. Authenticated endpoints require validated Telegram initData and owner authorization. Participation is idempotent through a unique constraint, high-risk exclusion is explicit, and Telegram API errors yield pending eligibility. No account age, device fingerprint or NFT ownership data is fabricated.
 
-The ARQ worker activates scheduled giveaways, rechecks pending/rejected subscriptions before the deadline, and closes expired giveaways each minute. It recalculates risk before freezing the draw snapshot. A Docker build and an online migration against PostgreSQL still need to be exercised on a host with Docker installed.
+The ARQ worker activates scheduled giveaways, rechecks pending/rejected subscriptions before the deadline, and closes expired giveaways each minute. It recalculates risk before freezing the draw snapshot. GitHub Actions exercises Docker builds and an online migration against PostgreSQL.
