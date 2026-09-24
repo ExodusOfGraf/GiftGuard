@@ -1,5 +1,35 @@
 # Журнал изменений проекта GiftGuard (CHANGELOG)
 
+## [0.4.0-ci-cd] — 2026-09-24
+
+### Added / Changed
+
+- Создан и опубликован [GitHub-репозиторий GiftGuard](https://github.com/ExodusOfGraf/GiftGuard); последний коммит этого этапа — [9651c63](https://github.com/ExodusOfGraf/GiftGuard/commit/9651c63d01f4f4c875fdc46609c366444597616c).
+- Добавлен [CI](.github/workflows/ci.yml): Ruff, pytest, online Alembic migration на PostgreSQL, frontend typecheck/build, npm audit, сборка Docker-образов и проверка обоих Compose-файлов.
+- Добавлен ручной [Deploy staging](.github/workflows/deploy.yml): сборка образов на GitHub runner, передача на сервер по SSH и запуск [staging Compose](deploy/compose.yml). Приватный ключ и секреты не хранятся в Git; инструкция — [docs/deployment.md](docs/deployment.md).
+- Mini App и API переведены на один домен через Next.js proxy. Frontend Dockerfile использует многоэтапную сборку и npm ci; локальные порты ограничены 127.0.0.1. Backend поднимает Bot API client для проверки подписок из Mini App.
+- Next.js обновлён до 16.3.6 после обнаружения уязвимостей. Typecheck вызывает next typegen, генерируемый next-env.d.ts исключён из Git.
+
+### Проверено
+
+- Локально: 24 backend-теста, Ruff check/format, frontend typecheck/build; npm audit production-зависимостей — 0 обнаруженных уязвимостей.
+- [CI на 9651c63](https://github.com/ExodusOfGraf/GiftGuard/actions/runs/35945504390): backend, frontend и Docker jobs — **success**. Тем самым Docker build и online миграция, оставшиеся открытыми в записи 0.3.1, проверены.
+- Staging Compose прошёл docker compose config --quiet непосредственно на сервере. Промежуточный [CI на adae8b8](https://github.com/ExodusOfGraf/GiftGuard/actions/runs/35944845636) упал из-за пути тестового .env; ошибка исправлена, следующие прогоны успешны.
+
+### Состояние сервера и следующие шаги
+
+- giftguard.grafskov.ru указывает на сервер Ubuntu с Docker/Compose. Созданы пользователь giftguard, каталог /opt/giftguard, отдельный SSH-доступ и серверный .env с уникальными случайными секретами и правами 600. Существующий сайт не изменён.
+- Контейнеры GiftGuard **ещё не запускались**. Для ручного staging-деплоя нужно заполнить BOT_TOKEN непосредственно на сервере, добавить в GitHub окружение staging секреты DEPLOY_SSH_KEY и DEPLOY_SSH_PASSPHRASE, затем проверить реальные сценарии Telegram.
+- Nginx vhost, HTTPS-сертификат для поддомена и Mini App URL в BotFather ещё не настроены. VPS имеет примерно 1 vCPU и 1 ГБ RAM при уже работающем другом сайте; перед публичной нагрузкой нужна проверка ресурсов.
+- Production mode намеренно заблокирован, пока draw использует предсказуемую timestamp-dev entropy. Для реальных призов нужен независимый источник с заранее зафиксированным раундом. Проверка владения NFT/Gift и автоматическая передача приза остаются вне MVP.
+- Переданный ранее в переписке пароль root следует сменить; он не записан в Git или CI.
+
+### Затронутые файлы
+
+.github/workflows/ci.yml, .github/workflows/deploy.yml, deploy/compose.yml, deploy/known_hosts, docs/deployment.md, docker-compose.yml, frontend/Dockerfile, frontend/next.config.mjs, frontend/src/lib/api.ts, frontend/package.json, frontend/package-lock.json, backend/app/api/main.py, README.md.
+
+---
+
 ## [0.3.1-review] — 2026-09-23
 
 - Исправлена тестовая конфигурация: для импорта backend используется PostgreSQL async URL, а не отсутствующий SQLite-драйвер.

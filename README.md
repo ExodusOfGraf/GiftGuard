@@ -2,6 +2,8 @@
 
 GiftGuard is a Telegram service for giveaways of Telegram Gifts and collectible NFTs. It checks participation requirements, retains explainable anti-farm signals, and publishes a reproducible draw proof.
 
+Project progress and change history: [CHANGELOG.md](CHANGELOG.md).
+
 ## Architecture
 
 FastAPI, aiogram and an ARQ worker form one Python application boundary backed by PostgreSQL and Redis. Next.js is a Telegram Mini App and organizer dashboard. The HTTP API and bot call the same service layer. See [docs/architecture.md](docs/architecture.md), [docs/domain-model.md](docs/domain-model.md) and [docs/draw-protocol.md](docs/draw-protocol.md).
