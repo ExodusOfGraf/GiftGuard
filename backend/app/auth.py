@@ -30,21 +30,38 @@ def validate_init_data(
         raise AuthorizationError("malformed Telegram initData") from exc
     values: dict[str, str] = {}
     for key, value in pairs:
-        if key in values or key in {"hash", "signature"}:
-            if key in values:
-                raise AuthorizationError("duplicate initData field")
+        if key in values:
+            raise AuthorizationError("duplicate initData field")
         values[key] = value
+
     received_hash = values.pop("hash", None)
-    values.pop("signature", None)
+    received_signature = values.pop("signature", None)
     if not received_hash or len(received_hash) != 64:
         raise AuthorizationError("missing initData hash")
     if not settings.bot_token:
         raise AuthorizationError("Telegram bot is not configured")
-    data_check_string = "\n".join(f"{key}={values[key]}" for key in sorted(values))
+
     secret_key = hmac.new(b"WebAppData", settings.bot_token.encode(), hashlib.sha256).digest()
+
+    # 1. Standard check without hash and without signature
+    data_check_string = "\n".join(f"{key}={values[key]}" for key in sorted(values))
     expected_hash = hmac.new(secret_key, data_check_string.encode(), hashlib.sha256).hexdigest()
+
+    # 2. Fallback check with signature included if client client-side hash included signature
     if not hmac.compare_digest(expected_hash, received_hash):
-        raise AuthorizationError("invalid Telegram initData signature")
+        if received_signature is not None:
+            values_with_sig = {**values, "signature": received_signature}
+            data_check_string_sig = "\n".join(
+                f"{key}={values_with_sig[key]}" for key in sorted(values_with_sig)
+            )
+            expected_hash_sig = hmac.new(
+                secret_key, data_check_string_sig.encode(), hashlib.sha256
+            ).hexdigest()
+            if not hmac.compare_digest(expected_hash_sig, received_hash):
+                raise AuthorizationError("invalid Telegram initData signature")
+        else:
+            raise AuthorizationError("invalid Telegram initData signature")
+
     try:
         auth_date = int(values["auth_date"])
         user_data = json.loads(values["user"])
@@ -52,7 +69,7 @@ def validate_init_data(
     except (KeyError, ValueError, TypeError, json.JSONDecodeError) as exc:
         raise AuthorizationError("invalid Telegram user data") from exc
     current = int(time.time()) if now is None else now
-    if auth_date > current + 60 or current - auth_date > settings.telegram_auth_max_age_seconds:
+    if auth_date > current + 300 or current - auth_date > settings.telegram_auth_max_age_seconds:
         raise AuthorizationError("expired Telegram initData")
     return TelegramWebAppUser(
         telegram_id=telegram_id,

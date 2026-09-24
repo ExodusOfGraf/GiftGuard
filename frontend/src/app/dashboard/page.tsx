@@ -4,7 +4,13 @@ import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { api, Giveaway } from "../../lib/api";
 import { StatusBadge } from "../../components/StatusBadge";
-import { initTelegram, hapticImpact } from "../../lib/telegram";
+import {
+  initTelegram,
+  hapticImpact,
+  getEffectiveInitData,
+  waitForTelegram,
+  getTelegram,
+} from "../../lib/telegram";
 import { useI18n } from "../../lib/i18n";
 
 export default function Dashboard() {
@@ -13,18 +19,27 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"all" | "active" | "draft" | "completed">("all");
+  const [isTg, setIsTg] = useState(false);
+
+  const loadData = async () => {
+    setLoading(true);
+    initTelegram();
+    await waitForTelegram(500);
+    setIsTg(Boolean(getTelegram() || getEffectiveInitData()));
+    try {
+      const data = await api<Giveaway[]>("/api/giveaways");
+      setItems(data);
+      setError(null);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Failed to load giveaways";
+      setError(message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    initTelegram();
-    api<Giveaway[]>("/api/giveaways")
-      .then((data) => {
-        setItems(data);
-        setError(null);
-      })
-      .catch((err) => {
-        setError(err.message || "Failed to load giveaways");
-      })
-      .finally(() => setLoading(false));
+    loadData();
   }, []);
 
   const totalGiveaways = items.length;
@@ -71,8 +86,8 @@ export default function Dashboard() {
         </Link>
       </div>
 
-      {/* Auth Banner if needed */}
-      {error && (
+      {/* Auth Banner if non-Telegram browser */}
+      {error && !isTg && (
         <div
           className="card"
           style={{
@@ -87,6 +102,29 @@ export default function Dashboard() {
           <p className="muted" style={{ color: "#e2e8f0", fontSize: "0.85rem" }}>
             {t.dashAuthBannerText}
           </p>
+        </div>
+      )}
+
+      {/* Real API Error if in Telegram */}
+      {error && isTg && (
+        <div
+          className="card"
+          style={{
+            borderLeft: "4px solid #ef4444",
+            background: "rgba(239, 68, 68, 0.08)",
+            marginBottom: "16px",
+          }}
+        >
+          <div style={{ fontWeight: 700, color: "#f87171", marginBottom: "6px", fontSize: "0.95rem" }}>
+            ⚠️ {error}
+          </div>
+          <button
+            className="button button-sm"
+            onClick={() => loadData()}
+            style={{ marginTop: "4px" }}
+          >
+            🔄 {locale === "ru" ? "Повторить попытку" : "Retry"}
+          </button>
         </div>
       )}
 

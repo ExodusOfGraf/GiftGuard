@@ -19,9 +19,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
         />
         <meta name="theme-color" content="#090d16" />
+        <script src="https://telegram.org/js/telegram-web-app.js" async={false} />
       </head>
       <body>
-        <Script src="https://telegram.org/js/telegram-web-app.js?63" strategy="beforeInteractive" />
         <I18nProvider>
           <div className="app-container">
             <Navbar />

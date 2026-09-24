@@ -3,7 +3,14 @@
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { getTelegram, TelegramUser, hapticImpact } from "../lib/telegram";
+import {
+  getTelegram,
+  TelegramUser,
+  hapticImpact,
+  getEffectiveUser,
+  getEffectiveInitData,
+  waitForTelegram,
+} from "../lib/telegram";
 import { LanguageSwitcher } from "./LanguageSwitcher";
 import { useI18n } from "../lib/i18n";
 
@@ -14,13 +21,21 @@ export function Navbar() {
   const [isTelegram, setIsTelegram] = useState(false);
 
   useEffect(() => {
-    const tg = getTelegram();
-    if (tg?.initDataUnsafe?.user) {
-      setUser(tg.initDataUnsafe.user);
-      setIsTelegram(true);
-    } else if (tg?.initData) {
-      setIsTelegram(true);
-    }
+    const sync = () => {
+      const u = getEffectiveUser();
+      const initData = getEffectiveInitData();
+      if (u) {
+        setUser(u);
+        setIsTelegram(true);
+      } else if (initData || getTelegram()) {
+        setIsTelegram(true);
+      }
+    };
+
+    sync();
+    waitForTelegram(800).then(() => {
+      sync();
+    });
   }, []);
 
   return (

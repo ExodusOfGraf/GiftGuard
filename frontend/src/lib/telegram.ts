@@ -75,6 +75,125 @@ export function getTelegram(): TelegramWebApp | null {
   return tg || null;
 }
 
+export function extractInitDataFromUrl(): string {
+  if (typeof window === "undefined") return "";
+  try {
+    if (window.location.hash) {
+      const hash = window.location.hash.substring(1);
+      const params = new URLSearchParams(hash);
+      const data = params.get("tgWebAppData");
+      if (data) return decodeURIComponent(data);
+    }
+    if (window.location.search) {
+      const params = new URLSearchParams(window.location.search);
+      const data = params.get("tgWebAppData");
+      if (data) return decodeURIComponent(data);
+    }
+  } catch {
+    // Ignore URL parsing errors
+  }
+  return "";
+}
+
+const STORAGE_KEY = "giftguard_tg_init_data";
+const USER_KEY = "giftguard_tg_user";
+
+export function getStoredInitData(): string {
+  if (typeof window === "undefined") return "";
+  try {
+    return sessionStorage.getItem(STORAGE_KEY) || localStorage.getItem(STORAGE_KEY) || "";
+  } catch {
+    return "";
+  }
+}
+
+export function setStoredInitData(data: string): void {
+  if (typeof window === "undefined" || !data) return;
+  try {
+    sessionStorage.setItem(STORAGE_KEY, data);
+    localStorage.setItem(STORAGE_KEY, data);
+  } catch {
+    // Storage access blocked or quota exceeded
+  }
+}
+
+export function parseUserFromInitData(initData: string): TelegramUser | null {
+  if (!initData) return null;
+  try {
+    const params = new URLSearchParams(initData);
+    const userStr = params.get("user");
+    if (userStr) {
+      return JSON.parse(userStr) as TelegramUser;
+    }
+  } catch {
+    // Fallback if parsing fails
+  }
+  return null;
+}
+
+export function getEffectiveInitData(): string {
+  if (typeof window === "undefined") return "";
+
+  // 1. Direct WebApp object
+  const tg = getTelegram();
+  if (tg?.initData) {
+    setStoredInitData(tg.initData);
+    if (tg.initDataUnsafe?.user) {
+      try { sessionStorage.setItem(USER_KEY, JSON.stringify(tg.initDataUnsafe.user)); } catch {}
+    }
+    return tg.initData;
+  }
+
+  // 2. URL hash or search params
+  const fromUrl = extractInitDataFromUrl();
+  if (fromUrl) {
+    setStoredInitData(fromUrl);
+    const parsedUser = parseUserFromInitData(fromUrl);
+    if (parsedUser) {
+      try { sessionStorage.setItem(USER_KEY, JSON.stringify(parsedUser)); } catch {}
+    }
+    return fromUrl;
+  }
+
+  // 3. Fallback to cached storage
+  return getStoredInitData();
+}
+
+export function getEffectiveUser(): TelegramUser | null {
+  const tg = getTelegram();
+  if (tg?.initDataUnsafe?.user) return tg.initDataUnsafe.user;
+
+  const initData = getEffectiveInitData();
+  const fromInit = parseUserFromInitData(initData);
+  if (fromInit) return fromInit;
+
+  if (typeof window !== "undefined") {
+    try {
+      const cached = sessionStorage.getItem(USER_KEY) || localStorage.getItem(USER_KEY);
+      if (cached) return JSON.parse(cached) as TelegramUser;
+    } catch {}
+  }
+  return null;
+}
+
+export async function waitForTelegram(timeoutMs: number = 800): Promise<boolean> {
+  if (typeof window === "undefined") return false;
+  if (getEffectiveInitData()) return true;
+
+  const start = Date.now();
+  return new Promise((resolve) => {
+    const check = () => {
+      const data = getEffectiveInitData();
+      if (data || Date.now() - start >= timeoutMs) {
+        resolve(Boolean(data));
+      } else {
+        setTimeout(check, 40);
+      }
+    };
+    check();
+  });
+}
+
 export function initTelegram(): void {
   const tg = getTelegram();
   if (!tg) return;
@@ -118,3 +237,4 @@ export function openTelegramChannel(usernameOrId: string): void {
     window.open(url, "_blank");
   }
 }
+

@@ -110,17 +110,21 @@ export interface Verification {
   verified: boolean;
 }
 
+import { getEffectiveInitData, waitForTelegram } from "./telegram";
+
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "";
 
 export function getInitData(): string {
-  if (typeof window === "undefined") return "";
-  return (
-    (window as unknown as { Telegram?: { WebApp?: { initData?: string } } }).Telegram?.WebApp?.initData || ""
-  );
+  return getEffectiveInitData();
 }
 
 export async function api<T>(path: string, init?: RequestInit): Promise<T> {
-  const initDataStr = getInitData();
+  // If in browser and initData not yet found, give Telegram SDK a brief moment to initialize
+  if (typeof window !== "undefined" && !getEffectiveInitData()) {
+    await waitForTelegram(350);
+  }
+
+  const initDataStr = getEffectiveInitData();
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
     ...(initDataStr ? { "X-Telegram-Init-Data": initDataStr } : {}),
