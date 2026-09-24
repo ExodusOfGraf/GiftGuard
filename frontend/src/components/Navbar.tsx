@@ -3,10 +3,13 @@
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { getTelegram, TelegramUser } from "../lib/telegram";
+import { getTelegram, TelegramUser, hapticImpact } from "../lib/telegram";
+import { LanguageSwitcher } from "./LanguageSwitcher";
+import { useI18n } from "../lib/i18n";
 
 export function Navbar() {
   const pathname = usePathname();
+  const { t } = useI18n();
   const [user, setUser] = useState<TelegramUser | null>(null);
   const [isTelegram, setIsTelegram] = useState(false);
 
@@ -21,53 +24,50 @@ export function Navbar() {
   }, []);
 
   return (
-    <nav>
-      <Link href="/" className="nav-brand">
-        <span style={{ fontSize: "1.3rem" }}>🛡️</span>
-        <span>GiftGuard</span>
-      </Link>
-
-      <div className="nav-links">
+    <header className="app-header">
+      <div className="header-inner">
         <Link
-          href="/dashboard"
-          className={`nav-link ${pathname === "/dashboard" ? "active" : ""}`}
+          href="/"
+          className="nav-brand"
+          onClick={() => hapticImpact("light")}
         >
-          Dashboard
-        </Link>
-        <Link
-          href="/giveaways/new"
-          className={`nav-link ${pathname === "/giveaways/new" ? "active" : ""}`}
-        >
-          + Create
+          <span className="brand-icon">🛡️</span>
+          <span className="brand-text">GiftGuard</span>
         </Link>
 
-        {isTelegram ? (
-          <span
-            style={{
-              fontSize: "0.8rem",
-              padding: "4px 8px",
-              borderRadius: "6px",
-              background: "rgba(56, 189, 248, 0.15)",
-              color: "#38bdf8",
-              fontWeight: 600,
-            }}
+        {/* Desktop links */}
+        <div className="desktop-links">
+          <Link
+            href="/dashboard"
+            className={`nav-link ${pathname === "/dashboard" ? "active" : ""}`}
+            onClick={() => hapticImpact("light")}
           >
-            {user?.username ? `@${user.username}` : user ? user.first_name : "Telegram"}
-          </span>
-        ) : (
-          <span
-            style={{
-              fontSize: "0.75rem",
-              padding: "3px 8px",
-              borderRadius: "6px",
-              background: "rgba(148, 163, 184, 0.1)",
-              color: "#94a3b8",
-            }}
+            {t.navDashboard}
+          </Link>
+          <Link
+            href="/giveaways/new"
+            className={`nav-link ${pathname === "/giveaways/new" ? "active" : ""}`}
+            onClick={() => hapticImpact("light")}
           >
-            Web
-          </span>
-        )}
+            {t.navCreate}
+          </Link>
+        </div>
+
+        {/* Right side controls: User badge & Language Switcher */}
+        <div className="header-right">
+          <LanguageSwitcher />
+
+          {isTelegram ? (
+            <span className="user-badge tg-badge" title="Telegram User">
+              {user?.username ? `@${user.username}` : user ? user.first_name : "TG"}
+            </span>
+          ) : (
+            <span className="user-badge web-badge" title="Web Mode">
+              {t.navWebUser}
+            </span>
+          )}
+        </div>
       </div>
-    </nav>
+    </header>
   );
 }

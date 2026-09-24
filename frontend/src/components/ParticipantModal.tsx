@@ -3,6 +3,8 @@
 import React from "react";
 import { Participant } from "../lib/api";
 import { RiskBadge } from "./RiskBadge";
+import { useI18n, Locale } from "../lib/i18n";
+import { hapticImpact } from "../lib/telegram";
 
 interface ParticipantModalProps {
   participant: Participant | null;
@@ -10,6 +12,8 @@ interface ParticipantModalProps {
 }
 
 export function ParticipantModal({ participant, onClose }: ParticipantModalProps) {
+  const { t, locale } = useI18n();
+
   if (!participant) return null;
 
   const signals = participant.metadata?.risk_signals || [];
@@ -17,6 +21,7 @@ export function ParticipantModal({ participant, onClose }: ParticipantModalProps
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
+    hapticImpact("light");
   };
 
   const displayName = participant.user.username
@@ -26,12 +31,22 @@ export function ParticipantModal({ participant, onClose }: ParticipantModalProps
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+        {/* Mobile drag handle */}
+        <div className="sheet-drag-handle" />
+
         <div className="modal-header">
           <div>
             <h2>{displayName}</h2>
-            <p className="muted">Telegram ID: {participant.user.telegram_id}</p>
+            <p className="muted">
+              {t.modalTgId} {participant.user.telegram_id}
+            </p>
           </div>
-          <button className="modal-close" onClick={onClose} aria-label="Close">
+          <button
+            type="button"
+            className="modal-close"
+            onClick={onClose}
+            aria-label={t.btnCancel}
+          >
             &times;
           </button>
         </div>
@@ -39,22 +54,29 @@ export function ParticipantModal({ participant, onClose }: ParticipantModalProps
         {/* Ticket ID */}
         <div className="hash-box">
           <div className="hash-box-label">
-            <span>Ticket UUID</span>
+            <span>{t.modalTicketUuid}</span>
             <button
               type="button"
               className="button-secondary button-sm"
               onClick={() => copyToClipboard(participant.id)}
             >
-              Copy
+              {t.btnCopy}
             </button>
           </div>
           <div className="hash-value">{participant.id}</div>
         </div>
 
         {/* Overview Grid */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", margin: "14px 0" }}>
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "1fr 1fr",
+            gap: "10px",
+            margin: "12px 0",
+          }}
+        >
           <div className="card" style={{ padding: "12px", background: "rgba(0,0,0,0.2)" }}>
-            <span className="stat-label">Eligibility</span>
+            <span className="stat-label">{t.modalEligibilityTitle}</span>
             <div style={{ marginTop: "4px" }}>
               <span
                 className={`badge ${
@@ -65,7 +87,17 @@ export function ParticipantModal({ participant, onClose }: ParticipantModalProps
                     : "badge-drawing"
                 }`}
               >
-                {participant.eligibility_status.toUpperCase()}
+                {participant.eligibility_status === "eligible"
+                  ? locale === "ru"
+                    ? "ДОПУЩЕН ✓"
+                    : "ELIGIBLE ✓"
+                  : participant.eligibility_status === "pending"
+                  ? locale === "ru"
+                    ? "ОЖИДАЕТ ⏳"
+                    : "PENDING ⏳"
+                  : locale === "ru"
+                  ? "ОТКЛОНЕН ✗"
+                  : "REJECTED ✗"}
               </span>
             </div>
             {participant.rejection_reason && (
@@ -76,27 +108,37 @@ export function ParticipantModal({ participant, onClose }: ParticipantModalProps
           </div>
 
           <div className="card" style={{ padding: "12px", background: "rgba(0,0,0,0.2)" }}>
-            <span className="stat-label">Fraud Risk</span>
+            <span className="stat-label">{t.modalFraudRiskTitle}</span>
             <div style={{ marginTop: "4px" }}>
               <RiskBadge score={participant.risk_score} level={participant.risk_level} />
             </div>
-            <p className="muted" style={{ fontSize: "0.75rem", marginTop: "4px" }}>
-              Joined: {new Date(participant.joined_at).toLocaleString()}
+            <p className="muted" style={{ fontSize: "0.72rem", marginTop: "4px" }}>
+              {t.modalJoined} {new Date(participant.joined_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
             </p>
           </div>
         </div>
 
         {/* Anti-Farm Risk Signals Breakdown */}
-        <div style={{ marginTop: "18px" }}>
-          <h3>Anti-Farm Signals ({signals.length})</h3>
-          <p className="muted" style={{ fontSize: "0.85rem" }}>
-            Explainable heuristic rules evaluated for this participant.
+        <div style={{ marginTop: "14px" }}>
+          <h3>
+            {t.modalSignalsTitle} ({signals.length})
+          </h3>
+          <p className="muted" style={{ fontSize: "0.82rem" }}>
+            {t.modalSignalsDesc}
           </p>
 
           {signals.length === 0 ? (
-            <div className="card" style={{ padding: "14px", marginTop: "8px", background: "rgba(16, 185, 129, 0.05)" }}>
-              <p style={{ color: "#34d399", fontSize: "0.9rem" }}>
-                ✓ No suspicious signals detected. Account looks clean.
+            <div
+              className="card"
+              style={{
+                padding: "12px",
+                marginTop: "8px",
+                background: "rgba(16, 185, 129, 0.08)",
+                border: "1px solid rgba(16, 185, 129, 0.2)",
+              }}
+            >
+              <p style={{ color: "#34d399", fontSize: "0.88rem", margin: 0 }}>
+                {t.modalNoSignals}
               </p>
             </div>
           ) : (
@@ -104,7 +146,7 @@ export function ParticipantModal({ participant, onClose }: ParticipantModalProps
               {signals.map((sig, idx) => (
                 <div key={idx} className="signal-item">
                   <div className="signal-info">
-                    <span className="signal-title">{formatRuleName(sig.rule)}</span>
+                    <span className="signal-title">{formatRuleName(sig.rule, locale)}</span>
                     <span className="signal-reason">{sig.reason}</span>
                   </div>
                   <span className="signal-score">+{sig.score}</span>
@@ -116,29 +158,37 @@ export function ParticipantModal({ participant, onClose }: ParticipantModalProps
 
         {/* Requirements Checks Observations */}
         {checks.length > 0 && (
-          <div style={{ marginTop: "20px" }}>
-            <h3>Requirement Checks</h3>
-            <div style={{ marginTop: "8px", display: "flex", flexDirection: "column", gap: "8px" }}>
+          <div style={{ marginTop: "16px" }}>
+            <h3>{t.modalChecksTitle}</h3>
+            <div style={{ marginTop: "8px", display: "flex", flexDirection: "column", gap: "6px" }}>
               {checks.map((chk, idx) => (
                 <div
                   key={idx}
                   style={{
                     display: "flex",
                     justifyContent: "space-between",
-                    padding: "8px 12px",
-                    background: "rgba(0,0,0,0.15)",
+                    padding: "10px 12px",
+                    background: "rgba(0,0,0,0.2)",
                     borderRadius: "8px",
                     fontSize: "0.85rem",
                   }}
                 >
-                  <span className="muted">Requirement #{idx + 1}</span>
+                  <span className="muted">
+                    {locale === "ru" ? `Канал #${idx + 1}` : `Channel #${idx + 1}`}
+                  </span>
                   <span>
                     {chk.subscribed ? (
-                      <span style={{ color: "#34d399" }}>Subscribed ✓</span>
+                      <span style={{ color: "#34d399", fontWeight: 600 }}>
+                        {t.modalSubscribed}
+                      </span>
                     ) : chk.status === "unavailable" ? (
-                      <span style={{ color: "#fbbf24" }}>Check Pending ⏳</span>
+                      <span style={{ color: "#fbbf24", fontWeight: 600 }}>
+                        {t.modalCheckPending}
+                      </span>
                     ) : (
-                      <span style={{ color: "#f87171" }}>Not Subscribed ✗</span>
+                      <span style={{ color: "#f87171", fontWeight: 600 }}>
+                        {t.modalNotSubscribed}
+                      </span>
                     )}
                   </span>
                 </div>
@@ -146,19 +196,41 @@ export function ParticipantModal({ participant, onClose }: ParticipantModalProps
             </div>
           </div>
         )}
+
+        <div style={{ marginTop: "18px" }}>
+          <button
+            type="button"
+            className="button button-secondary button-full"
+            onClick={onClose}
+          >
+            {t.btnCancel}
+          </button>
+        </div>
       </div>
     </div>
   );
 }
 
-function formatRuleName(rule: string): string {
-  const map: Record<string, string> = {
-    participation_burst: "Participation Burst",
+function formatRuleName(rule: string, locale: Locale): string {
+  if (locale === "ru") {
+    const mapRu: Record<string, string> = {
+      participation_burst: "Всплеск массовых регистраций",
+      instant_join: "Мгновенное участие после публикации",
+      requirement_completion_speed: "Аномальная скорость подписки",
+      duplicate_pattern: "Одинаковый поведенческий паттерн",
+      new_interaction: "Первое взаимодействие с ботом",
+      referral_anomaly: "Аномалия графа рефералов",
+    };
+    return mapRu[rule] || rule;
+  }
+
+  const mapEn: Record<string, string> = {
+    participation_burst: "Registration Burst Anomaly",
     instant_join: "Instant Participation",
-    requirement_completion_speed: "Completion Speed Anomaly",
+    requirement_completion_speed: "Speed Completion Anomaly",
     duplicate_pattern: "Duplicate Behavioral Pattern",
     new_interaction: "First Interaction Anomaly",
     referral_anomaly: "Referral Graph Anomaly",
   };
-  return map[rule] || rule.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+  return mapEn[rule] || rule.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 }

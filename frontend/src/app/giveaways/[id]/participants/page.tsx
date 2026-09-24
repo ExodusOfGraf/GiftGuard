@@ -7,10 +7,12 @@ import { api, Participant } from "../../../../lib/api";
 import { RiskBadge } from "../../../../components/RiskBadge";
 import { ParticipantModal } from "../../../../components/ParticipantModal";
 import { initTelegram, hapticImpact } from "../../../../lib/telegram";
+import { useI18n } from "../../../../lib/i18n";
 
 export default function ParticipantsPage() {
   const params = useParams();
   const id = params?.id as string;
+  const { t, locale } = useI18n();
 
   const [items, setItems] = useState<Participant[]>([]);
   const [loading, setLoading] = useState(true);
@@ -66,14 +68,17 @@ export default function ParticipantsPage() {
 
   return (
     <main>
-      <div style={{ marginBottom: "20px" }}>
-        <Link href={`/giveaways/${id}`} className="muted" style={{ display: "inline-block", marginBottom: "8px" }}>
-          ← Back to Giveaway
+      <div style={{ marginBottom: "16px" }}>
+        <Link
+          href={`/giveaways/${id}`}
+          className="muted"
+          onClick={() => hapticImpact("light")}
+          style={{ display: "inline-block", marginBottom: "6px" }}
+        >
+          {t.gwBackGiveaway}
         </Link>
-        <h1>Anti-Farm Inspector</h1>
-        <p className="muted">
-          Inspect behavioral risk scoring, burst anomalies, and requirement checks for each participant.
-        </p>
+        <h1>{t.partTitle}</h1>
+        <p className="muted">{t.partSubtitle}</p>
       </div>
 
       {error && (
@@ -82,7 +87,7 @@ export default function ParticipantsPage() {
           style={{
             borderLeft: "4px solid #ef4444",
             background: "rgba(239, 68, 68, 0.1)",
-            marginBottom: "20px",
+            marginBottom: "16px",
           }}
         >
           <p style={{ color: "#fca5a5" }}>{error}</p>
@@ -90,131 +95,122 @@ export default function ParticipantsPage() {
       )}
 
       {/* Filter and Search Bar */}
-      <section className="card" style={{ marginBottom: "20px", padding: "16px" }}>
-        <div style={{ display: "flex", gap: "12px", flexWrap: "wrap", alignItems: "center" }}>
-          <div style={{ flex: 1, minWidth: "220px" }}>
+      <section className="card" style={{ marginBottom: "16px", padding: "14px" }}>
+        <div style={{ display: "flex", gap: "10px", flexWrap: "wrap", alignItems: "center" }}>
+          <div style={{ flex: 1, minWidth: "200px" }}>
             <input
               type="text"
-              placeholder="Search by @username or Telegram ID..."
+              placeholder={t.partSearchPlaceholder}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               style={{ marginBottom: 0 }}
             />
           </div>
 
-          <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+          <div style={{ display: "flex", gap: "8px", width: "100%", flexWrap: "wrap" }}>
             <select
               value={eligibilityFilter}
-              onChange={(e) => setEligibilityFilter(e.target.value)}
-              style={{ width: "auto", marginBottom: 0 }}
+              onChange={(e) => {
+                hapticImpact("light");
+                setEligibilityFilter(e.target.value);
+              }}
+              style={{ flex: 1, minWidth: "140px", marginBottom: 0 }}
             >
-              <option value="all">All Eligibility</option>
-              <option value="eligible">Eligible ✓</option>
-              <option value="rejected">Rejected ✗</option>
-              <option value="pending">Pending ⏳</option>
+              <option value="all">{t.partFilterAllEligibility}</option>
+              <option value="eligible">{t.partFilterEligible}</option>
+              <option value="pending">{t.partFilterPending}</option>
+              <option value="rejected">{t.partFilterRejected}</option>
             </select>
 
             <select
               value={riskFilter}
-              onChange={(e) => setRiskFilter(e.target.value)}
-              style={{ width: "auto", marginBottom: 0 }}
+              onChange={(e) => {
+                hapticImpact("light");
+                setRiskFilter(e.target.value);
+              }}
+              style={{ flex: 1, minWidth: "130px", marginBottom: 0 }}
             >
-              <option value="all">All Risk Levels</option>
-              <option value="low">Low Risk (0–29)</option>
-              <option value="medium">Medium Risk (30–59)</option>
-              <option value="high">High Risk (60–100)</option>
+              <option value="all">{t.partFilterAllRisk}</option>
+              <option value="low">{t.partFilterRiskLow}</option>
+              <option value="medium">{t.partFilterRiskMedium}</option>
+              <option value="high">{t.partFilterRiskHigh}</option>
             </select>
           </div>
         </div>
       </section>
 
-      {/* Participants Table */}
-      {loading ? (
-        <div className="card" style={{ textAlign: "center", padding: "40px" }}>
-          <p>Analyzing participant signals...</p>
-        </div>
-      ) : filtered.length === 0 ? (
-        <div className="card" style={{ textAlign: "center", padding: "40px" }}>
-          <h2>No participants found</h2>
-          <p className="muted">
-            {items.length === 0
-              ? "No one has entered this giveaway yet."
-              : "No participants match the active filter criteria."}
-          </p>
-        </div>
-      ) : (
-        <div className="table-container">
-          <table>
-            <thead>
-              <tr>
-                <th>Participant</th>
-                <th>Joined</th>
-                <th>Eligibility</th>
-                <th>Risk Score</th>
-                <th>Inspection</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((p) => {
-                const userTitle = p.user.username
-                  ? `@${p.user.username}`
-                  : p.user.first_name || `ID ${p.user.telegram_id}`;
-                const signalCount = p.metadata?.risk_signals?.length || 0;
-
-                return (
-                  <tr
-                    key={p.id}
-                    className="clickable-row"
-                    onClick={() => handleSelect(p)}
-                  >
-                    <td>
-                      <div style={{ fontWeight: 600 }}>{userTitle}</div>
-                      <div className="muted" style={{ fontSize: "0.78rem" }}>
-                        ID: {p.user.telegram_id}
-                      </div>
-                    </td>
-                    <td>
-                      <span className="muted" style={{ fontSize: "0.85rem" }}>
-                        {new Date(p.joined_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                      </span>
-                    </td>
-                    <td>
-                      <span
-                        className={`badge ${
-                          p.eligibility_status === "eligible"
-                            ? "badge-completed"
-                            : p.eligibility_status === "rejected"
-                            ? "badge-cancelled"
-                            : "badge-drawing"
-                        }`}
-                      >
-                        {p.eligibility_status.toUpperCase()}
-                      </span>
-                    </td>
-                    <td>
-                      <RiskBadge score={p.risk_score} level={p.risk_level} />
-                    </td>
-                    <td>
-                      <button
-                        type="button"
-                        className="button-secondary button-sm"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleSelect(p);
-                        }}
-                      >
-                        {signalCount > 0 ? `${signalCount} Signals →` : "Clean →"}
-                      </button>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+      {/* Loading & Empty State */}
+      {loading && (
+        <div className="card" style={{ textAlign: "center", padding: "36px" }}>
+          <p>{t.btnLoading}</p>
         </div>
       )}
 
-      {/* Anti-Farm Inspector Modal */}
+      {!loading && filtered.length === 0 && (
+        <div className="card" style={{ textAlign: "center", padding: "36px 16px" }}>
+          <div style={{ fontSize: "2rem", marginBottom: "8px" }}>👥</div>
+          <p className="muted">{t.partNoFound}</p>
+        </div>
+      )}
+
+      {/* Participants: Mobile Cards (Default on small screens) */}
+      {!loading && filtered.length > 0 && (
+        <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+          {filtered.map((item) => {
+            const signalsCount = item.metadata?.risk_signals?.length || 0;
+            return (
+              <div
+                key={item.id}
+                className="card card-interactive"
+                onClick={() => handleSelect(item)}
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  padding: "12px 14px",
+                  gap: "10px",
+                }}
+              >
+                <div style={{ display: "flex", flexDirection: "column", gap: "3px", minWidth: 0 }}>
+                  <div style={{ fontWeight: 700, fontSize: "0.95rem", color: "#f8fafc", wordBreak: "break-all" }}>
+                    {item.user.username ? `@${item.user.username}` : item.user.first_name || `ID ${item.user.telegram_id}`}
+                  </div>
+                  <div className="muted" style={{ fontSize: "0.75rem" }}>
+                    ID: {item.user.telegram_id} • {new Date(item.joined_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                  </div>
+                </div>
+
+                <div style={{ display: "flex", alignItems: "center", gap: "8px", flexShrink: 0 }}>
+                  <span
+                    className={`badge ${
+                      item.eligibility_status === "eligible"
+                        ? "badge-completed"
+                        : item.eligibility_status === "pending"
+                        ? "badge-drawing"
+                        : "badge-cancelled"
+                    }`}
+                  >
+                    {item.eligibility_status === "eligible"
+                      ? locale === "ru"
+                        ? "ДОПУЩЕН"
+                        : "ELIGIBLE"
+                      : item.eligibility_status === "pending"
+                      ? locale === "ru"
+                        ? "ОЖИДАЕТ"
+                        : "PENDING"
+                      : locale === "ru"
+                      ? "ОТКЛОНЕН"
+                      : "REJECTED"}
+                  </span>
+                  <RiskBadge score={item.risk_score} level={item.risk_level} />
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Participant Modal / Inspector Sheet */}
       <ParticipantModal participant={selected} onClose={() => setSelected(null)} />
     </main>
   );

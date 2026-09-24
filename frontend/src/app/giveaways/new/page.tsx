@@ -4,10 +4,12 @@ import React, { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { api, PrizeType } from "../../../lib/api";
-import { hapticNotification } from "../../../lib/telegram";
+import { hapticNotification, hapticImpact } from "../../../lib/telegram";
+import { useI18n } from "../../../lib/i18n";
 
 export default function NewGiveaway() {
   const router = useRouter();
+  const { t } = useI18n();
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -42,15 +44,18 @@ export default function NewGiveaway() {
     }
     if (!channels.includes(clean)) {
       setChannels([...channels, clean]);
+      hapticImpact("light");
     }
     setChannelInput("");
   };
 
   const removeChannel = (idx: number) => {
+    hapticImpact("light");
     setChannels(channels.filter((_, i) => i !== idx));
   };
 
   const setPresetDuration = (days: number) => {
+    hapticImpact("light");
     const start = new Date(startsAt);
     const end = new Date(start.getTime() + days * 24 * 60 * 60 * 1000);
     setEndsAt(formatDateForInput(end));
@@ -59,16 +64,17 @@ export default function NewGiveaway() {
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!title.trim()) {
-      setError("Please enter a giveaway title");
+      setError(t.createErrTitle);
       return;
     }
     if (!prizeTitle.trim()) {
-      setError("Please specify a prize title");
+      setError(t.createErrPrize);
       return;
     }
 
     setSubmitting(true);
     setError(null);
+    hapticImpact("medium");
 
     try {
       // 1. Create Giveaway draft
@@ -120,12 +126,17 @@ export default function NewGiveaway() {
 
   return (
     <main style={{ maxWidth: "680px" }}>
-      <div style={{ marginBottom: "20px" }}>
-        <Link href="/dashboard" className="muted" style={{ display: "inline-block", marginBottom: "8px" }}>
-          ← Back to Dashboard
+      <div style={{ marginBottom: "16px" }}>
+        <Link
+          href="/dashboard"
+          className="muted"
+          onClick={() => hapticImpact("light")}
+          style={{ display: "inline-block", marginBottom: "6px" }}
+        >
+          {t.gwBackDashboard}
         </Link>
-        <h1>Create Giveaway</h1>
-        <p className="muted">Configure terms, prize metadata, channels, and anti-fraud rules.</p>
+        <h1>{t.createTitle}</h1>
+        <p className="muted">{t.createSubtitle}</p>
       </div>
 
       {error && (
@@ -134,38 +145,37 @@ export default function NewGiveaway() {
           style={{
             borderLeft: "4px solid #ef4444",
             background: "rgba(239, 68, 68, 0.1)",
-            marginBottom: "20px",
+            marginBottom: "16px",
           }}
         >
-          <div style={{ fontWeight: 600, color: "#f87171", marginBottom: "4px" }}>Error</div>
           <p style={{ color: "#fca5a5", fontSize: "0.9rem" }}>{error}</p>
         </div>
       )}
 
       <form onSubmit={handleSubmit}>
         {/* Section 1: Campaign details */}
-        <section className="card" style={{ marginBottom: "20px" }}>
-          <h2>1. Campaign Details</h2>
+        <section className="card" style={{ marginBottom: "16px" }}>
+          <h2>{t.createSec1Title}</h2>
 
-          <label>Giveaway Title *</label>
+          <label>{t.createFieldTitle}</label>
           <input
             type="text"
             required
-            placeholder="e.g. Plush Pepe NFT Giveaway #42"
+            placeholder={t.createFieldTitlePlaceholder}
             value={title}
             onChange={(e) => setTitle(e.target.value)}
           />
 
-          <label>Description</label>
+          <label>{t.createFieldDesc}</label>
           <textarea
-            placeholder="Explain the giveaway terms and context for participants..."
+            placeholder={t.createFieldDescPlaceholder}
             value={description}
             onChange={(e) => setDescription(e.target.value)}
           />
 
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
             <div>
-              <label>Starts At (UTC) *</label>
+              <label>{t.createFieldStartsAt}</label>
               <input
                 type="datetime-local"
                 required
@@ -174,7 +184,7 @@ export default function NewGiveaway() {
               />
             </div>
             <div>
-              <label>Ends At (UTC) *</label>
+              <label>{t.createFieldEndsAt}</label>
               <input
                 type="datetime-local"
                 required
@@ -184,24 +194,37 @@ export default function NewGiveaway() {
             </div>
           </div>
 
-          <div style={{ display: "flex", gap: "8px", marginBottom: "16px", flexWrap: "wrap" }}>
-            <span className="muted" style={{ alignSelf: "center", fontSize: "0.8rem" }}>
-              Quick presets:
+          <div style={{ display: "flex", gap: "6px", marginBottom: "14px", flexWrap: "wrap", alignItems: "center" }}>
+            <span className="muted" style={{ fontSize: "0.78rem" }}>
+              {t.createQuickPresets}
             </span>
-            <button type="button" className="button-secondary button-sm" onClick={() => setPresetDuration(1)}>
+            <button
+              type="button"
+              className="button-secondary button-sm"
+              onClick={() => setPresetDuration(1)}
+            >
               +24h
             </button>
-            <button type="button" className="button-secondary button-sm" onClick={() => setPresetDuration(3)}>
-              +3 days
+            <button
+              type="button"
+              className="button-secondary button-sm"
+              onClick={() => setPresetDuration(3)}
+            >
+              +3d
             </button>
-            <button type="button" className="button-secondary button-sm" onClick={() => setPresetDuration(7)}>
-              +7 days
+            <button
+              type="button"
+              className="button-secondary button-sm"
+              onClick={() => setPresetDuration(7)}
+            >
+              +7d
             </button>
           </div>
 
-          <label>Winners Count (1 – 100) *</label>
+          <label>{t.createFieldWinners}</label>
           <input
             type="number"
+            inputMode="numeric"
             min={1}
             max={100}
             required
@@ -211,39 +234,40 @@ export default function NewGiveaway() {
         </section>
 
         {/* Section 2: Prize details */}
-        <section className="card" style={{ marginBottom: "20px" }}>
-          <h2>2. Prize Information</h2>
+        <section className="card" style={{ marginBottom: "16px" }}>
+          <h2>{t.createSec2Title}</h2>
 
-          <label>Prize Type *</label>
+          <label>{t.createFieldPrizeType}</label>
           <select value={prizeType} onChange={(e) => setPrizeType(e.target.value as PrizeType)}>
-            <option value="telegram_gift">Telegram Gift</option>
-            <option value="telegram_collectible">Telegram Collectible</option>
-            <option value="ton_nft">TON NFT</option>
-            <option value="custom">Custom Prize</option>
+            <option value="telegram_gift">{t.createTypeTgGift}</option>
+            <option value="telegram_collectible">{t.createTypeCollectible}</option>
+            <option value="ton_nft">{t.createTypeTonNft}</option>
+            <option value="custom">{t.createTypeCustom}</option>
           </select>
 
-          <label>Prize Title *</label>
+          <label>{t.createFieldPrizeTitle}</label>
           <input
             type="text"
             required
-            placeholder="e.g. Plush Pepe #7421"
+            placeholder={t.createFieldPrizeTitlePlaceholder}
             value={prizeTitle}
             onChange={(e) => setPrizeTitle(e.target.value)}
           />
 
-          <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: "12px" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: "10px" }}>
             <div>
-              <label>Estimated Value</label>
+              <label>{t.createFieldPrizeValue}</label>
               <input
                 type="number"
                 step="0.01"
+                inputMode="decimal"
                 placeholder="e.g. 72"
                 value={prizeValue}
                 onChange={(e) => setPrizeValue(e.target.value)}
               />
             </div>
             <div>
-              <label>Currency</label>
+              <label>{t.createFieldPrizeCurrency}</label>
               <input
                 type="text"
                 placeholder="TON"
@@ -253,26 +277,26 @@ export default function NewGiveaway() {
             </div>
           </div>
 
-          <label>Prize Notes / Description</label>
+          <label>{t.createFieldPrizeNotes}</label>
           <input
             type="text"
-            placeholder="Optional details about delivery or collectible attributes"
+            placeholder={t.createFieldPrizeNotesPlaceholder}
             value={prizeDesc}
             onChange={(e) => setPrizeDesc(e.target.value)}
           />
         </section>
 
         {/* Section 3: Requirements / Channels */}
-        <section className="card" style={{ marginBottom: "20px" }}>
-          <h2>3. Channel Subscription Requirements</h2>
-          <p className="muted" style={{ marginBottom: "14px" }}>
-            Add channels that users must join to qualify. The bot must be an administrator in these channels to verify membership.
+        <section className="card" style={{ marginBottom: "16px" }}>
+          <h2>{t.createSec3Title}</h2>
+          <p className="muted" style={{ marginBottom: "12px", fontSize: "0.85rem" }}>
+            {t.createSec3Desc}
           </p>
 
-          <div style={{ display: "flex", gap: "8px", marginBottom: "14px" }}>
+          <div style={{ display: "flex", gap: "8px", marginBottom: "12px" }}>
             <input
               type="text"
-              placeholder="e.g. @channel_username"
+              placeholder={t.createFieldChannelPlaceholder}
               value={channelInput}
               onChange={(e) => setChannelInput(e.target.value)}
               onKeyDown={(e) => {
@@ -283,17 +307,22 @@ export default function NewGiveaway() {
               }}
               style={{ marginBottom: 0 }}
             />
-            <button type="button" className="button-secondary" onClick={addChannel}>
-              + Add
+            <button
+              type="button"
+              className="button-secondary"
+              onClick={addChannel}
+              style={{ whiteSpace: "nowrap" }}
+            >
+              {t.createBtnAddChannel}
             </button>
           </div>
 
           {channels.length === 0 ? (
-            <p className="muted" style={{ fontStyle: "italic", fontSize: "0.85rem" }}>
-              No channels added yet. (Anyone can participate without subscription requirements)
+            <p className="muted" style={{ fontStyle: "italic", fontSize: "0.82rem" }}>
+              {t.createNoChannels}
             </p>
           ) : (
-            <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
               {channels.map((ch, idx) => (
                 <div
                   key={idx}
@@ -302,18 +331,18 @@ export default function NewGiveaway() {
                     justifyContent: "space-between",
                     alignItems: "center",
                     padding: "8px 12px",
-                    background: "rgba(0,0,0,0.2)",
+                    background: "rgba(0,0,0,0.25)",
                     borderRadius: "8px",
                   }}
                 >
-                  <span style={{ fontWeight: 600, color: "#38bdf8" }}>{ch}</span>
+                  <span style={{ fontWeight: 600, color: "#38bdf8", fontSize: "0.9rem" }}>{ch}</span>
                   <button
                     type="button"
                     className="button-secondary button-sm"
-                    style={{ color: "#f87171" }}
+                    style={{ color: "#f87171", padding: "4px 8px", minHeight: "30px" }}
                     onClick={() => removeChannel(idx)}
                   >
-                    Remove
+                    {t.createBtnRemove}
                   </button>
                 </div>
               ))}
@@ -322,14 +351,14 @@ export default function NewGiveaway() {
         </section>
 
         {/* Section 4: Anti-Fraud Rules */}
-        <section className="card" style={{ marginBottom: "24px" }}>
-          <h2>4. Anti-Fraud &amp; Fairness Rules</h2>
+        <section className="card" style={{ marginBottom: "20px" }}>
+          <h2>{t.createSec4Title}</h2>
 
           <div
             style={{
               display: "flex",
               alignItems: "flex-start",
-              gap: "12px",
+              gap: "10px",
               padding: "12px",
               background: "rgba(56, 189, 248, 0.05)",
               borderRadius: "8px",
@@ -341,27 +370,31 @@ export default function NewGiveaway() {
               id="excludeHighRisk"
               checked={excludeHighRisk}
               onChange={(e) => setExcludeHighRisk(e.target.checked)}
-              style={{ width: "20px", height: "20px", marginTop: "2px", accentColor: "#38bdf8" }}
+              style={{ width: "22px", height: "22px", marginTop: "2px", accentColor: "#38bdf8" }}
             />
             <label htmlFor="excludeHighRisk" style={{ margin: 0, cursor: "pointer", color: "#f1f5f9" }}>
-              <div style={{ fontWeight: 700, marginBottom: "2px" }}>
-                Exclude HIGH-Risk Participants from Winning Pool
+              <div style={{ fontWeight: 700, marginBottom: "2px", fontSize: "0.9rem" }}>
+                {t.createExcludeHighRiskLabel}
               </div>
-              <p className="muted" style={{ fontSize: "0.82rem", margin: 0 }}>
-                Accounts that score ≥60 in Anti-Farm evaluation (burst registrations, speed anomalies, duplicate behavioral clusters) will not be eligible for winner selection.
+              <p className="muted" style={{ fontSize: "0.8rem", margin: 0 }}>
+                {t.createExcludeHighRiskDesc}
               </p>
             </label>
           </div>
         </section>
 
         {/* Action Buttons */}
-        <div style={{ display: "flex", gap: "12px", justifyContent: "flex-end" }}>
-          <Link href="/dashboard" className="button button-secondary">
-            Cancel
-          </Link>
-          <button type="submit" disabled={submitting}>
-            {submitting ? "Creating Draft..." : "Create Draft Giveaway →"}
+        <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+          <button type="submit" className="button button-full" disabled={submitting}>
+            {submitting ? t.createBtnSubmitting : t.createBtnSubmit}
           </button>
+          <Link
+            href="/dashboard"
+            className="button button-secondary button-full"
+            onClick={() => hapticImpact("light")}
+          >
+            {t.btnCancel}
+          </Link>
         </div>
       </form>
     </main>

@@ -3,15 +3,19 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useI18n } from "../lib/i18n";
+import { hapticImpact } from "../lib/telegram";
 
 export default function Home() {
   const router = useRouter();
+  const { t } = useI18n();
   const [lookupId, setLookupId] = useState("");
 
   const handleLookup = (e: React.FormEvent) => {
     e.preventDefault();
     const clean = lookupId.trim();
     if (clean) {
+      hapticImpact("medium");
       router.push(`/giveaways/${clean}/results`);
     }
   };
@@ -19,7 +23,7 @@ export default function Home() {
   return (
     <main>
       {/* Hero Section */}
-      <section style={{ textAlign: "center", padding: "40px 10px 30px" }}>
+      <section style={{ textAlign: "center", padding: "28px 4px 20px" }}>
         <div
           style={{
             display: "inline-flex",
@@ -30,81 +34,81 @@ export default function Home() {
             background: "rgba(56, 189, 248, 0.1)",
             border: "1px solid rgba(56, 189, 248, 0.3)",
             color: "#38bdf8",
-            fontSize: "0.85rem",
+            fontSize: "0.82rem",
             fontWeight: 700,
-            marginBottom: "18px",
+            marginBottom: "14px",
           }}
         >
-          🛡️ Cloudflare for Telegram Giveaways
+          {t.heroBadge}
         </div>
 
-        <h1 style={{ fontSize: "2.4rem", maxWidth: "700px", margin: "0 auto 16px" }}>
-          Verifiable Telegram Gifts &amp; NFT Giveaways
+        <h1 style={{ maxWidth: "700px", margin: "0 auto 12px" }}>
+          {t.heroTitle}
         </h1>
 
-        <p style={{ maxWidth: "600px", margin: "0 auto 28px", fontSize: "1.1rem" }}>
-          Protect expensive gift campaigns from multi-account farms, ensure provably fair winner selection, and analyze real user quality.
+        <p style={{ maxWidth: "560px", margin: "0 auto 24px", fontSize: "1rem" }}>
+          {t.heroSubtitle}
         </p>
 
-        <div style={{ display: "flex", gap: "12px", justifyContent: "center", flexWrap: "wrap" }}>
-          <Link className="button" href="/dashboard" style={{ padding: "12px 24px", fontSize: "1rem" }}>
-            Organizer Dashboard →
+        <div style={{ display: "flex", gap: "10px", justifyContent: "center", flexDirection: "column" }}>
+          <Link
+            className="button button-full"
+            href="/dashboard"
+            onClick={() => hapticImpact("light")}
+            style={{ fontSize: "1rem" }}
+          >
+            {t.heroBtnDashboard}
           </Link>
           <Link
-            className="button button-secondary"
+            className="button button-secondary button-full"
             href="/giveaways/new"
-            style={{ padding: "12px 20px", fontSize: "1rem" }}
+            onClick={() => hapticImpact("light")}
+            style={{ fontSize: "0.95rem" }}
           >
-            + Create Giveaway
+            {t.heroBtnCreate}
           </Link>
         </div>
       </section>
 
       {/* Feature Cards Grid */}
-      <div className="grid" style={{ margin: "40px 0 30px" }}>
+      <div className="grid" style={{ margin: "24px 0" }}>
         <div className="card">
-          <div style={{ fontSize: "2rem", marginBottom: "12px" }}>🤖</div>
-          <h2>Anti-Farm Protection</h2>
-          <p>
-            Rule-based behavioral engine assigns each participant an explainable risk score (0–100) analyzing registration bursts, speed anomalies, and duplicate patterns.
-          </p>
+          <div style={{ fontSize: "1.75rem", marginBottom: "8px" }}>🤖</div>
+          <h2>{t.featureAntiFarmTitle}</h2>
+          <p style={{ fontSize: "0.9rem" }}>{t.featureAntiFarmDesc}</p>
         </div>
 
         <div className="card">
-          <div style={{ fontSize: "2rem", marginBottom: "12px" }}>🎲</div>
-          <h2>Provably Fair Draw</h2>
-          <p>
-            Cryptographic commitment-reveal protocol (SHA-256, frozen participant snapshots, HMAC-SHA256 rejection sampling). Anyone can verify the exact draw result.
-          </p>
+          <div style={{ fontSize: "1.75rem", marginBottom: "8px" }}>🎲</div>
+          <h2>{t.featureDrawTitle}</h2>
+          <p style={{ fontSize: "0.9rem" }}>{t.featureDrawDesc}</p>
         </div>
 
         <div className="card">
-          <div style={{ fontSize: "2rem", marginBottom: "12px" }}>🎁</div>
-          <h2>Prize Transparency</h2>
-          <p>
-            Verifiable metadata for Telegram Gifts, collectible NFTs, and TON assets. Know what you are giving away and who received it.
-          </p>
+          <div style={{ fontSize: "1.75rem", marginBottom: "8px" }}>🎁</div>
+          <h2>{t.featurePrizeTitle}</h2>
+          <p style={{ fontSize: "0.9rem" }}>{t.featurePrizeDesc}</p>
         </div>
       </div>
 
       {/* Quick Verifier Lookup Card */}
-      <section className="card" style={{ maxWidth: "680px", margin: "20px auto 0" }}>
-        <h3>Verify Any Giveaway Result</h3>
-        <p className="muted" style={{ marginBottom: "14px" }}>
-          Enter a Giveaway UUID to inspect its cryptographic manifest, participant snapshot hash, and deterministic winner selection.
+      <section className="card" style={{ margin: "16px auto 0" }}>
+        <h3>{t.verifierCardTitle}</h3>
+        <p className="muted" style={{ marginBottom: "12px", fontSize: "0.85rem" }}>
+          {t.verifierCardDesc}
         </p>
-        <form onSubmit={handleLookup} style={{ display: "flex", gap: "10px", alignItems: "flex-start", flexWrap: "wrap" }}>
-          <div style={{ flex: 1, minWidth: "260px" }}>
-            <input
-              type="text"
-              placeholder="e.g. 8f31d044-8848-43f9-..."
-              value={lookupId}
-              onChange={(e) => setLookupId(e.target.value)}
-              style={{ marginBottom: 0 }}
-              required
-            />
-          </div>
-          <button type="submit">Verify Draw →</button>
+        <form onSubmit={handleLookup} style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+          <input
+            type="text"
+            placeholder={t.verifierPlaceholder}
+            value={lookupId}
+            onChange={(e) => setLookupId(e.target.value)}
+            style={{ marginBottom: 0 }}
+            required
+          />
+          <button type="submit" className="button button-full">
+            {t.verifierBtnSubmit}
+          </button>
         </form>
       </section>
     </main>
