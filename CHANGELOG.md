@@ -1,6 +1,43 @@
 # Журнал изменений проекта GiftGuard (CHANGELOG)
 
-## [0.4.3-staging-xray] — 2026-09-24
+## [0.4.4-e2e-verification-and-https] — 2026-09-24
+
+### Настроено и реализовано
+
+- **Nginx & Let's Encrypt HTTPS**:
+  - Настроен виртуальный хост Nginx для `giftguard.grafskov.ru` с проксированием на `http://127.0.0.1:3000` (Next.js standalone с внутренним проксированием `/api/*` на backend).
+  - Успешно получен и развёрнут SSL/TLS-сертификат Let's Encrypt (действителен до 23.12.2026 с автообновлением через certbot systemd timer).
+  - Настроен автоматический 301-редирект с HTTP на HTTPS (`http://giftguard.grafskov.ru` -> `https://giftguard.grafskov.ru`).
+  - Проверена внешняя доступность: `https://giftguard.grafskov.ru/api/health` отвечает `200 {"status":"ok"}`.
+- **Исправление сериализации отношений в FastAPI**:
+  - В `backend/app/api/main.py` исправлена ошибка `MissingGreenlet`: в эндпоинтах `create_giveaway`, `update_giveaway`, `publish_giveaway` и `cancel_giveaway` объект розыгрыша перезагружается через `service.repo.get(item.id)`, что гарантирует предзагрузку `prize`, `requirements` и `draw` через `selectinload` при сериализации в `GiveawayRead`.
+
+### Полная сквозная E2E верификация (14 этапов)
+
+Проведён полный end-to-end тест жизненного цикла розыгрыша на боевом сервере с реальной криптографией:
+1. **Аутентификация Telegram**: генерация валидных подписей `initData` (HMAC-SHA256) для организатора и 3 участников.
+2. **Создание розыгрыша**: `POST /api/giveaways` -> создан черновик розыгрыша.
+3. **Установка приза**: `POST /api/giveaways/{id}/prize` -> привязан `telegram_gift` ("Plush Pepe #7421", ~72 TON).
+4. **Публикация**: `POST /api/giveaways/{id}/publish` -> генерация криптографического seed commitment, статус переведён в `active`.
+5. **Публичный предпросмотр**: `GET /api/public/giveaways/{id}` -> возвращает розыгрыш с призом и условиями.
+6. **Участие пользователей**: 3 участника успешно зарегистрировали билеты с расчётом anti-farm risk score.
+7. **Идемпотентность**: повторный запрос на участие возвращает существующий билет со статусом 200 без дублирования.
+8. **Конфиденциальность (Privacy-preserving)**: `GET /participation/me` возвращает участнику только статус и номер билета; `risk_score` надёжно скрыт от участников.
+9. **Инспектор организатора**: `GET /participants` возвращает список участников с прозрачными сигналами антифрода.
+10. **Аналитика кампании**: `GET /analytics` возвращает точное распределение участников по категориям риска.
+11. **Дедлайн**: наступление времени завершения розыгрыша (`ends_at`).
+12. **Provably Fair Draw**: `POST /giveaways/{id}/draw` -> детерминированный выбор 2 победителей через HMAC-SHA256 rejection sampling, расшифровка секретного seed, фиксация канонического хэша участников.
+13. **Публичная верификация**: `GET /api/public/giveaways/{id}/verification` -> публичный доступ к доказательству честности (`verified: true`, канонический снэпшот, хэш, энтропия, финальный seed, победители).
+14. **Независимая верификация сервером**: `POST /api/public/giveaways/{id}/verify` подтвердила математическую корректность розыгрыша (`verified: true`).
+
+### Telegram Bot
+
+- Имя бота: `@Gifts_Guard_bot` (ID: `8864079357`).
+- Бот активен, работает через приватный Xray SOCKS5 sidecar, 0 ошибок в polling (`pending_update_count: 0`).
+
+---
+
+
 
 ### Настроено и проверено
 

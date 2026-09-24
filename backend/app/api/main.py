@@ -115,10 +115,10 @@ async def health() -> dict[str, str]:
 @router.post("/giveaways", response_model=GiveawayRead, status_code=201)
 async def create_giveaway(data: GiveawayCreate, session: SessionDep, user: UserDep):
     try:
-        item = await GiveawayService(session, get_settings()).create(user, data)
+        service = GiveawayService(session, get_settings())
+        item = await service.create(user, data)
         await session.commit()
-        await session.refresh(item)
-        return item
+        return await service.repo.get(item.id)
     except DomainError as exc:
         raise handle_domain_error(exc)
 
@@ -142,9 +142,10 @@ async def update_giveaway(
     giveaway_id: uuid.UUID, data: GiveawayUpdate, session: SessionDep, user: UserDep
 ):
     try:
-        item = await GiveawayService(session, get_settings()).update(user, giveaway_id, data)
+        service = GiveawayService(session, get_settings())
+        item = await service.update(user, giveaway_id, data)
         await session.commit()
-        return item
+        return await service.repo.get(item.id)
     except (DomainError, ValueError) as exc:
         if isinstance(exc, DomainError):
             raise handle_domain_error(exc)
@@ -154,9 +155,10 @@ async def update_giveaway(
 @router.post("/giveaways/{giveaway_id}/publish", response_model=GiveawayRead)
 async def publish_giveaway(giveaway_id: uuid.UUID, session: SessionDep, user: UserDep):
     try:
-        item = await GiveawayService(session, get_settings()).publish(user, giveaway_id)
+        service = GiveawayService(session, get_settings())
+        item = await service.publish(user, giveaway_id)
         await session.commit()
-        return item
+        return await service.repo.get(item.id)
     except DomainError as exc:
         raise handle_domain_error(exc)
 
@@ -164,9 +166,10 @@ async def publish_giveaway(giveaway_id: uuid.UUID, session: SessionDep, user: Us
 @router.post("/giveaways/{giveaway_id}/cancel", response_model=GiveawayRead)
 async def cancel_giveaway(giveaway_id: uuid.UUID, session: SessionDep, user: UserDep):
     try:
-        item = await GiveawayService(session, get_settings()).cancel(user, giveaway_id)
+        service = GiveawayService(session, get_settings())
+        item = await service.cancel(user, giveaway_id)
         await session.commit()
-        return item
+        return await service.repo.get(item.id)
     except DomainError as exc:
         raise handle_domain_error(exc)
 
