@@ -1,5 +1,19 @@
 # Журнал изменений проекта GiftGuard (CHANGELOG)
 
+## [0.4.1-staging-deploy] — 2026-09-24
+
+### Проверено
+
+- [Deploy staging на 20290c9](https://github.com/ExodusOfGraf/GiftGuard/actions/runs/35948209287) завершился успешно: повторный CI, загрузка SSH-ключа, проверка серверной конфигурации, сборка и передача образов, docker compose up -d --wait.
+- Первый [запуск](https://github.com/ExodusOfGraf/GiftGuard/actions/runs/35947674665) остановился до подключения к серверу из-за отсутствующего DEPLOY_SSH_PASSPHRASE в окружении GitHub staging. После добавления секрета SSH-этап прошёл.
+- Публичный http://giftguard.grafskov.ru/api/health пока возвращает 404, а HTTPS ещё не настроен: Nginx vhost и сертификат остаются следующим этапом. Успешный Compose health check подтверждает внутренний запуск backend/frontend, но не публичную доступность и не работу Telegram-сценариев.
+
+### Следующие шаги
+
+- Проверить состояние и логи bot/worker на сервере, затем настроить Nginx и HTTPS для поддомена и выполнить Telegram end-to-end smoke test.
+
+---
+
 ## [0.4.0-ci-cd] — 2026-09-24
 
 ### Added / Changed
