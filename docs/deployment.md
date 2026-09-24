@@ -23,9 +23,11 @@ Run **Deploy staging** from the Actions tab. The backend applies Alembic migrati
 
 ## Telegram API connectivity on this VPS
 
-The host reaches api.telegram.org over IPv6, but its IPv4 connection times out. The bot has restarted on Telegram getMe timeouts; it is stopped until a proxy is configured. The staging Compose file includes an optional Xray sidecar under the xray profile. It publishes no ports and runs as the giftguard UID (1001) so it can read a server-only config with mode 600.
+The host reaches api.telegram.org over IPv6, but its IPv4 connection times out. A private Xray sidecar now carries Telegram Bot API traffic through a user-supplied VLESS/TLS node. Only the bot, API membership checks and worker use the SOCKS5 proxy; other application traffic stays direct. The sidecar has no published ports.
 
-After the Xray share URI is converted to /opt/giftguard/xray/config.json, set COMPOSE_PROFILES=xray and TELEGRAM_PROXY_URL=socks5://xray:1080 in the server .env. Never commit the share URI or generated config. Test the Xray configuration and a real Telegram getMe request before enabling the bot. The deploy workflow now performs that getMe smoke check and fails if Telegram remains unreachable.
+The derived Xray configuration is stored only at /opt/giftguard/xray/config.json, owned by giftguard with mode 600. The server .env enables COMPOSE_PROFILES=xray and TELEGRAM_PROXY_URL=socks5://xray:1080. Neither the subscription URL nor the derived credentials are stored in GitHub or Git. The Xray image is pinned to a linux/amd64 digest and runs as UID 1001 to read the private config.
+
+The staging deployment at https://github.com/ExodusOfGraf/GiftGuard/actions/runs/35950897469 passed its Telegram getMe smoke check. Separate checks from backend and worker also passed, and bot, worker and Xray had zero restarts. On future releases, the deploy workflow fails if getMe cannot be reached. The public Nginx vhost and HTTPS certificate are still pending.
 
 ## Release limits
 

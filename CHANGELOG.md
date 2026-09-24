@@ -1,5 +1,17 @@
 # Журнал изменений проекта GiftGuard (CHANGELOG)
 
+## [0.4.3-staging-xray] — 2026-09-24
+
+### Настроено и проверено
+
+- Из предоставленной пользователем подписки выбран доступный VLESS/TLS-узел. Производный конфиг Xray установлен только на сервере в /opt/giftguard/xray/config.json с правами 600; сама подписка и ключи не добавлены в Git/GitHub.
+- Приватный Xray sidecar запущен без опубликованных портов. Прокси активирован для bot, API и worker через серверный .env. Прямой getMe через прокси вернул HTTP 200.
+- [Staging deploy на 53767da](https://github.com/ExodusOfGraf/GiftGuard/actions/runs/35950897469) завершился успешно, включая новый Telegram getMe smoke check. Дополнительные проверки getMe из backend и worker прошли; у bot, worker, Xray, backend и frontend ноль рестартов.
+- Публичные Nginx vhost и HTTPS для giftguard.grafskov.ru ещё не настроены. На VPS около 1 ГБ RAM; нагрузку и swap нужно наблюдать перед реальными кампаниями.
+
+---
+
+
 ## [0.4.2-telegram-proxy-prep] — 2026-09-24
 
 ### Диагностика и изменения
