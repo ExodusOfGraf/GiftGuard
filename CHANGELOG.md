@@ -30,14 +30,24 @@
 13. **Публичная верификация**: `GET /api/public/giveaways/{id}/verification` -> публичный доступ к доказательству честности (`verified: true`, канонический снэпшот, хэш, энтропия, финальный seed, победители).
 14. **Независимая верификация сервером**: `POST /api/public/giveaways/{id}/verify` подтвердила математическую корректность розыгрыша (`verified: true`).
 
-### Telegram Bot
+### Telegram Bot & Mini App
 
 - Имя бота: `@Gifts_Guard_bot` (ID: `8864079357`).
 - Бот активен, работает через приватный Xray SOCKS5 sidecar, 0 ошибок в polling (`pending_update_count: 0`).
+- Настройка Mini App в @BotFather:
+  - Menu Button URL: `https://giftguard.grafskov.ru`
+  - Текст кнопки: `🎁 GiftGuard`
+  - Прямой доступ к верификации и дашборду через Telegram WebApp SDK.
+
+### Затронутые файлы и коммиты
+
+- `backend/app/api/main.py` — перезагрузка отношений при мутациях розыгрыша.
+- `CHANGELOG.md`, `docs/deployment.md` — фиксация результатов и инструкций.
+- Git коммит: [`e814dfe`](https://github.com/ExodusOfGraf/GiftGuard/commit/e814dfe)
 
 ---
 
-
+## [0.4.3-staging-xray] — 2026-09-24
 
 ### Настроено и проверено
 
